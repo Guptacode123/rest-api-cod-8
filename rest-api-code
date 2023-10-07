@@ -27,12 +27,13 @@ const initializeDBAndServer = async () => {
 
 initializeDBAndServer();
 
-const hasPriorityAndStatus = (requestQuery) => {
+const hasPriorityAndStatusProperties = (requestQuery) => {
   return (
     requestQuery.priority !== undefined && requestQuery.status !== undefined
   );
 };
-const hasPriority = (requestQuery) => {
+
+const hasPriorityProperty = (requestQuery) => {
   return requestQuery.priority !== undefined;
 };
 
@@ -41,49 +42,54 @@ const hasStatusProperty = (requestQuery) => {
 };
 
 app.get("/todos/", async (request, response) => {
-  const { search_q = "", priority, status } = requestQuery;
   let data = null;
-  let getTodoQuery = "";
+  let getTodosQuery = "";
+  const { search_q = "", priority, status } = request.query;
+
   switch (true) {
-    case hasPriorityAndStatus(request.Query):
-      getTodoQuery = `
-          select * from todo where todo like '%${search_q}%'
-           and priority ='${priority}' 
-          and  status = '${status}';`;
+    case hasPriorityAndStatusProperties(request.query): //if this is true then below query is taken in the code
+      getTodosQuery = `
+   SELECT
+    *
+   FROM
+    todo 
+   WHERE
+    todo LIKE '%${search_q}%'
+    AND status = '${status}'
+    AND priority = '${priority}';`;
       break;
-    case hasPriority(request.Query):
-      getTodoQuery = `
-          select * from todo where todo like '%${search_q}%' and priority = '${priority}';`;
+    case hasPriorityProperty(request.query):
+      getTodosQuery = `
+   SELECT
+    *
+   FROM
+    todo 
+   WHERE
+    todo LIKE '%${search_q}%'
+    AND priority = '${priority}';`;
       break;
-    case hasStatusProperty(request.Query):
-      getTodoQuery = `
-          select * from todo where todo like '%${search_q}%' and status ='${status}';`;
+    case hasStatusProperty(request.query):
+      getTodosQuery = `
+   SELECT
+    *
+   FROM
+    todo 
+   WHERE
+    todo LIKE '%${search_q}%'
+    AND status = '${status}';`;
       break;
-
     default:
-      getTodoQuery = `
-        select * from todo where todo like '%${search_q}%';`;
-      break;
+      getTodosQuery = `
+   SELECT
+    *
+   FROM
+    todo 
+   WHERE
+    todo LIKE '%${search_q}%';`;
   }
-  data = await db.all(getTodoQuery);
+
+  data = await database.all(getTodosQuery);
   response.send(data);
-});
-
-app.get("/todos/:todoId", async (request, response) => {
-  const { id } = request.params;
-  const getTodoIdQuery = `
-    select * from todo where id='${id};`;
-  const user = await db.get(getTodoIdQuery);
-  response.send(user);
-});
-
-app.post("/todos/", async (request, response) => {
-  const { id, todo, priority, status } = request.body;
-  const insertQuery = `
-    insert into todo (id,todo,priority,status) values (${id},'${todo}','${priority}','${status}';`;
-
-  await db.run(insertQuery);
-  response.send("Todo Successfully Ad");
 });
 
 module.exports = app;
